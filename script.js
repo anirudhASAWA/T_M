@@ -1,19 +1,5 @@
-let inputIsFocused = false;
 
-// Add this at the beginning of your script, after your state declaration
-document.addEventListener('focusin', function(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
-    inputIsFocused = true;
-  }
-});
-
-document.addEventListener('focusout', function(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
-    inputIsFocused = false;
-  }
-});
-
-//Main application state
+// Main application state
 function debounce(func, wait) {
   let timeout;
   return function() {
@@ -26,19 +12,30 @@ function debounce(func, wait) {
   };
 }
 
-// Replace the existing resize event listener with this debounced version
+// Add the lastWidth variable at the top level with your other variables
+let lastWidth = window.innerWidth;
+
+// Single resize event handler that only responds to width changes
 window.addEventListener('resize', debounce(function() {
-  const wasMobile = isMobile;
-  isMobile = window.innerWidth <= 768;
+  // Get current width only (not height)
+  const currentWidth = window.innerWidth;
   
-  // If changed between mobile and desktop, save form data first
-  if (wasMobile !== isMobile) {
-    // Save all form data before switching views
-    captureAllFormData();
-    // Then render the new interface
-    renderInterface();
+  // Only respond to width changes, not height changes (keyboard)
+  if (currentWidth !== lastWidth) {
+    lastWidth = currentWidth;
+    
+    const wasMobile = isMobile;
+    isMobile = currentWidth <= 768;
+    
+    // If changed between mobile and desktop, save form data first
+    if (wasMobile !== isMobile) {
+      // Save all form data before switching views
+      captureAllFormData();
+      // Then render the new interface
+      renderInterface();
+    }
   }
-}, 250)); // 250ms debounce time
+}, 250));
 
 // Add this function to capture all form data before view changes
 function captureAllFormData() {
@@ -729,55 +726,14 @@ function updateViewportAndInterface() {
 }
 
 // Replace the existing resize event listener with this improved version
-window.addEventListener('resize', debounce(function() {
-  // Save form data before switching views
-  captureAllFormData();
-  
-  // Update viewport and interface
-  updateViewportAndInterface();
-}, 250));
 
 // Ensure proper initial rendering on page load
 
 
 // Modify the renderInterface function to use the new viewport detection
-const originalUpdateViewportAndInterface = updateViewportAndInterface;
-updateViewportAndInterface = function() {
-  // If we're on mobile and an input has focus, we need to be careful
-  if (isMobile && inputIsFocused && lastFocusedInput) {
-    // Save input state
-    const focusedId = lastFocusedInput.id;
-    const focusedValue = lastFocusedInput.value;
-    const selectionStart = lastFocusedInput.selectionStart || 0;
-    
-    // Only update timer displays, don't do a full re-render
-    updateAllTimerDisplays();
-    
-    // Call original function only for specific operations, not during normal typing
-    if (document.activeElement.tagName === 'BUTTON' || 
-        lastFocusedInput.classList.contains('no-preserve')) {
-      // For buttons or special inputs, allow full rendering
-      originalUpdateViewportAndInterface();
-      
-      // Try to restore focus afterward
-      setTimeout(() => {
-        const newElement = document.getElementById(focusedId);
-        if (newElement) {
-          newElement.focus();
-          if (newElement.value !== undefined) {
-            newElement.value = focusedValue;
-            if (newElement.setSelectionRange) {
-              newElement.setSelectionRange(selectionStart, selectionStart);
-            }
-          }
-        }
-      }, 50);
-    }
-  } else {
-    // Normal behavior for desktop or when no input is focused
-    originalUpdateViewportAndInterface();
-  }
-};
+function renderInterface() {
+  updateViewportAndInterface();
+}
 
 // Update UI elements for setup mode
 function updateSetupModeUI() {
@@ -1090,10 +1046,8 @@ function updateSubprocessTimerDisplay(processIndex, subprocessIndex) {
     mobileTimerDisplay.textContent = formattedTime;
   }
   
-  // Only update button states if no input is currently focused
-  if (!inputIsFocused) {
-    updateButtonUI(processIndex, subprocessIndex);
-  }
+  // Also update button states to ensure they reflect current timer state
+  updateButtonUI(processIndex, subprocessIndex);
 }
 
 // Add this function to create a fixed-height scrollable container for recordings

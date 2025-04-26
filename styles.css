@@ -10,6 +10,19 @@
   padding: 20px;
 }
 
+/* Add this to your styles.css file */
+@media (max-width: 768px) {
+  body.keyboard-open {
+    height: auto !important;
+    position: relative !important;
+    overflow: auto !important;
+  }
+  
+  .mobile-action-bar {
+    position: fixed !important;
+  }
+}
+
 .header-container {
   display: flex;
   align-items: center;

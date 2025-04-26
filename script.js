@@ -13,24 +13,16 @@ function debounce(func, wait) {
 }
 
 // Replace the existing resize event listener with this debounced version
-// Replace your current resize event listener with this one
 window.addEventListener('resize', debounce(function() {
-  const currentWidth = window.innerWidth;
-  const previousWidth = isMobile ? 768 : 769; // Assuming previous width
+  const wasMobile = isMobile;
+  isMobile = window.innerWidth <= 768;
   
-  // Only trigger re-render if the width changed significantly (not just height)
-  // This prevents keyboard appearance from triggering re-renders
-  if (Math.abs(currentWidth - previousWidth) > 50) {
-    const wasMobile = isMobile;
-    isMobile = currentWidth <= 768;
-    
-    // If changed between mobile and desktop, save form data first
-    if (wasMobile !== isMobile) {
-      // Save all form data before switching views
-      captureAllFormData();
-      // Then render the new interface
-      renderInterface();
-    }
+  // If changed between mobile and desktop, save form data first
+  if (wasMobile !== isMobile) {
+    // Save all form data before switching views
+    captureAllFormData();
+    // Then render the new interface
+    renderInterface();
   }
 }, 250)); // 250ms debounce time
 
@@ -657,75 +649,79 @@ function enhanceStateModel() {
 
 // Render the appropriate interface based on device
 // Improved mobile detection and viewport handling
-// Update this function
 function updateViewportAndInterface() {
   // Get the current viewport width
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   
-  // Only update mobile flag if width actually changed significantly
-  const oldIsMobile = isMobile;
-  const newIsMobile = viewportWidth <= 768;
+  // Set mobile flag based on viewport width
+  isMobile = viewportWidth <= 768;
   
-  if (oldIsMobile !== newIsMobile) {
-    isMobile = newIsMobile;
+  // Force the correct interface based on detected device type
+  if (isMobile) {
+    // Ensure desktop elements are hidden
+    const desktopElements = document.querySelectorAll('.desktop-only');
+    desktopElements.forEach(element => {
+      element.style.display = 'none';
+    });
     
-    // Force the correct interface based on detected device type
-    if (isMobile) {
-      // Ensure desktop elements are hidden
-      const desktopElements = document.querySelectorAll('.desktop-only');
-      desktopElements.forEach(element => {
-        element.style.display = 'none';
-      });
-      
-      // Ensure mobile elements are visible
-      const mobileView = document.getElementById('mobileView');
-      if (mobileView) {
-        mobileView.style.display = 'block';
-      }
-      
-      const mobileActionBar = document.getElementById('mobileActionBar');
-      if (mobileActionBar) {
-        mobileActionBar.style.display = 'flex';
-      }
-      
-      // Render mobile interface
-      renderMobileView();
-    } else {
-      // Ensure mobile elements are hidden
-      const mobileView = document.getElementById('mobileView');
-      if (mobileView) {
-        mobileView.style.display = 'none';
-      }
-      
-      const mobileActionBar = document.getElementById('mobileActionBar');
-      if (mobileActionBar) {
-        mobileActionBar.style.display = 'none';
-      }
-      
-      // Ensure desktop elements are visible if we have processes
-      if (state.processes.length > 0) {
-        const processTableContainer = document.getElementById('processTableContainer');
-        if (processTableContainer) {
-          processTableContainer.style.display = 'block';
-        }
-      }
-      
-      // Render desktop interface
-      renderProcesses();
-      renderRecordedTimes();
+    // Ensure mobile elements are visible
+    const mobileView = document.getElementById('mobileView');
+    if (mobileView) {
+      mobileView.style.display = 'block';
     }
     
-    // Update all timer displays
-    updateAllTimerDisplays();
-    
-    // Update the setup mode UI
-    if (typeof updateSetupModeUI === 'function') {
-      updateSetupModeUI();
+    const mobileActionBar = document.getElementById('mobileActionBar');
+    if (mobileActionBar) {
+      mobileActionBar.style.display = 'flex';
     }
     
-    console.log("Interface updated based on viewport width: " + viewportWidth + ", Mobile: " + isMobile);
+    // Render mobile interface
+    renderMobileView();
+    
+  } else {
+    // Ensure mobile elements are hidden
+    const mobileView = document.getElementById('mobileView');
+    if (mobileView) {
+      mobileView.style.display = 'none';
+    }
+    
+    const mobileActionBar = document.getElementById('mobileActionBar');
+    if (mobileActionBar) {
+      mobileActionBar.style.display = 'none';
+    }
+    
+    // Ensure desktop elements are visible if we have processes
+    if (state.processes.length > 0) {
+      const processTableContainer = document.getElementById('processTableContainer');
+      if (processTableContainer) {
+        processTableContainer.style.display = 'block';
+      }
+    }
+    
+    // Render desktop interface
+    renderProcesses();
+    renderRecordedTimes();
   }
+  
+  // Update all timer displays
+  updateAllTimerDisplays();
+  
+  // Update the setup mode UI
+  if (typeof updateSetupModeUI === 'function') {
+    updateSetupModeUI();
+  }
+  
+  console.log("Interface updated based on viewport width: " + viewportWidth + ", Mobile: " + isMobile);
 }
+
+// Replace the existing resize event listener with this improved version
+window.addEventListener('resize', debounce(function() {
+  // Save form data before switching views
+  captureAllFormData();
+  
+  // Update viewport and interface
+  updateViewportAndInterface();
+}, 250));
 
 // Ensure proper initial rendering on page load
 
